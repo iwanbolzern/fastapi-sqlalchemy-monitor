@@ -1,0 +1,186 @@
+name: Deploy Artifacts & Pages
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write
+
+  deploy-docs:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-uv
+        with:
+          python-version: '3.11'
+          registry-username: ${{ secrets.UV_INDEX_ROCHE_USERNAME }}
+          registry-password: ${{ secrets.UV_INDEX_ROCHE_PASSWORD }}
+      - name: Deploy Pages
+        id: deploy
+        run: |
+          mkdocs build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v4
+      - name: Deploy REMCS Docs
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.REPOSITORY_ACCESS_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/Roche-REMCS/remcs-docs/dispatches \
+            -d '{"event_type":"dispatch-event"}'
+
+  deploy-lib:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-uv
+        with:
+          python-version: '3.11'
+          registry-username: ${{ secrets.UV_INDEX_ROCHE_USERNAME }}
+          registry-password: ${{ secrets.UV_INDEX_ROCHE_PASSWORD }}
+      - name: Deploy Library
+        id: deploy
+        run: |
+          uv build
+          uv publish --username "$INDEX_AUTH_USERNAME" --password "$INDEX_AUTH_PASSWORD"
+        env:
+          INDEX_URL: https://code.roche.com/api/v4/projects/70075/packages/pypi
+          INDEX_AUTH_USERNAME: ${{ secrets.ROCHE_REGISTRY_USERNAME }}
+          INDEX_AUTH_PASSWORD: ${{ secrets.ROCHE_REGISTRY_PASSWORD }}
+
+  deploy-exe-for-windows-2022:
+    needs: [ test ]
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-uv
+        with:
+          python-version: '3.11'
+          registry-username: ${{ secrets.UV_INDEX_ROCHE_USERNAME }}
+          registry-password: ${{ secrets.UV_INDEX_ROCHE_PASSWORD }}
+      - name: Deploy windows executable
+        id: deploy
+        run: .\packager.ps1
+      - name: 'Upload Artifact'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $file = Get-ChildItem -Path ./dist | Select-Object -First 1
+          $file = $file.Name
+          Write-OutPut "Uploading .\dist\$file"
+          gh release upload ${{ github.event.release.tag_name }} ".\dist\$file"
+
+  deploy-exe-for-ubuntu-22-04:
+    needs: [ test ]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-uv
+        with:
+          python-version: '3.11'
+          registry-username: ${{ secrets.UV_INDEX_ROCHE_USERNAME }}
+          registry-password: ${{ secrets.UV_INDEX_ROCHE_PASSWORD }}
+      - name: Deploy linux executable
+        id: deploy
+        run: bash packager.sh ubuntu-22.04
+      - name: 'Upload Artifact'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          file=$(ls ./dist | head -1)
+          echo "Uploading ./dist/$file"
+          gh release upload ${{ github.event.release.tag_name }} "./dist/$file"
+
+  deploy-exe-for-ubuntu-20-04:
+    needs: [ test ]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-uv
+        with:
+          python-version: '3.11'
+          registry-username: ${{ secrets.UV_INDEX_ROCHE_USERNAME }}
+          registry-password: ${{ secrets.UV_INDEX_ROCHE_PASSWORD }}
+      - name: Deploy linux executable
+        id: deploy
+        run: bash packager.sh ubuntu-20.04
+      - name: 'Upload Artifact'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          file=$(ls ./dist | head -1)
+          echo "Uploading ./dist/$file"
+          gh release upload ${{ github.event.release.tag_name }} "./dist/$file"
+
+  build-and-publish-docker:
+    needs: [ test ]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Image
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install --update
+
+          VERSION=$(git describe --tags --always)
+
+          echo " => building '$VERSION'"
+
+          ./dockerfiles/build.sh $VERSION
+
+          aws configure set region eu-central-1 --profile navify-remcs
+          aws configure set aws_access_key_id ${AWS_ACCESS_KEY} --profile navify-remcs
+          aws configure set aws_secret_access_key ${AWS_SECRET_KEY} --profile navify-remcs
+
+          ./dockerfiles/push.sh $VERSION
+        env:
+          AWS_ACCESS_KEY: ${{ secrets.REMCS_AI_CI_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.REMCS_AI_CI_SECRET_ACCESS_KEY }}

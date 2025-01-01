@@ -1,0 +1,30 @@
+name: 'Setup uv Environment'
+description: 'Setup uv Environment'
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: true
+  registry-username:
+    description: 'PyPI registry username'
+    required: true
+  registry-password:
+    description: 'PyPI registry password'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - run: |
+        python -m pip install -U pip
+        python -m pip install -U uv uv-dynamic-versioning
+        python_path=$(which python)
+        python_root_dir=$(dirname $(dirname $python_path))
+        export UV_PROJECT_ENVIRONMENT=$python_root_dir
+        echo "UV_PROJECT_ENVIRONMENT is set to $UV_PROJECT_ENVIRONMENT"
+        uv sync --frozen
+      shell: bash
+      env:
+        UV_INDEX_ROCHE_USERNAME: ${{ inputs.registry-username }}
+        UV_INDEX_ROCHE_PASSWORD: ${{ inputs.registry-password }}
