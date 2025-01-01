@@ -1,0 +1,37 @@
+name: Deploy Artifacts & Pages
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write
+
+  deploy:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-uv
+        with:
+          python-version: '3.11'
+      - name: Deploy Library
+        id: deploy
+        run: |
+          uv build
+          uv publish --username "$INDEX_AUTH_USERNAME" --password "$INDEX_AUTH_PASSWORD"
+        env:
+          INDEX_AUTH_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          INDEX_AUTH_PASSWORD: ${{ secrets.PYPI_PASSWORD }}

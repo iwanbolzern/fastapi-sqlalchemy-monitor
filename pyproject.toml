@@ -1,0 +1,76 @@
+[project]
+name = "fastapi-sqlalchemy-monitor"
+dynamic = ["version"]
+description = "Seamlessly track SQLAlchemy performance in FastAPI with plug-and-play monitoring middleware 🔍"
+authors = [
+    { name = "Iwan Bolzern" },
+]
+readme = "README.md"
+urls = { Documentation = "https://github.com/iwanbolzern/fastapi-sqlalchemy-monitor" }
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[all]>=0.115.6",
+    "sqlalchemy[asyncio]>=2.0.36",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.20.0",
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.4",
+    "uv-dynamic-versioning>=0.4.0",
+]
+
+[tool.uv]
+package = true
+python-downloads = "manual"
+default-groups = ["dev"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+bump = true
+
+[tool.uv-dynamic-versioning.substitution]
+folders = [
+    { path = "src" }
+]
+
+[tool.ruff]
+line-length = 120
+include = ["src/**.py", "tests/**.py"]
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "C", # flake8-comprehensions
+    "B", # flake8-bugbear
+]
+ignore = [
+]
