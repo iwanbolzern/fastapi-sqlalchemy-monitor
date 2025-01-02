@@ -12,6 +12,5 @@ runs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: |
-        uv pip install uv-dynamic-versioning
         uv sync --frozen
       shell: bash
