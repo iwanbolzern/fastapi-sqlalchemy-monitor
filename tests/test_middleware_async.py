@@ -1,11 +1,11 @@
 import pytest
+from common import TestAction
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from fastapi_sqlalchemy_monitor.middleware import SQLAlchemyMonitor
-from common import TestAction
 
 
 @pytest.fixture
