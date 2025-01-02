@@ -5,7 +5,7 @@ from sqlalchemy import Engine, StaticPool, create_engine, select, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from fastapi_sqlalchemy_monitor.middleware import SQLAlchemyMonitor
-from tests.common import TestAction
+from common import TestAction
 
 
 @pytest.fixture

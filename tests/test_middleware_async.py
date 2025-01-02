@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from fastapi_sqlalchemy_monitor.middleware import SQLAlchemyMonitor
-from tests.common import TestAction
+from common import TestAction
 
 
 @pytest.fixture
