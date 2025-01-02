@@ -213,8 +213,8 @@ standard = [
 
 [[package]]
 name = "fastapi-sqlalchemy-monitor"
-version = "0.1.0"
-source = { virtual = "." }
+version = "0.0.1.dev4+2bca3a7"
+source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["all"] },
     { name = "sqlalchemy", extra = ["asyncio"] },

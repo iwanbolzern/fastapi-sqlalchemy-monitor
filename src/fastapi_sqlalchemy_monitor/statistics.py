@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
 
 
 @dataclass
@@ -8,6 +7,7 @@ class QueryStatistic:
 
     Tracks execution count and timing information for a specific SQL query.
     """
+
     query: str  # The query that was executed
     total_invocations: int = 0  # The total number of invocations of this query
     total_invocation_time_ms: int = 0  # The total time (ms) spent waiting for the database to respond
@@ -19,9 +19,10 @@ class QueryStatistic:
 @dataclass
 class AlchemyStatistics:
     """Aggregates statistics for all SQL queries during a request.
-    
+
     Maintains counters for total query executions and timing, plus detailed stats per query.
     """
+
     total_invocations: int = 0  # Total number of invocations cline <---> database round trips
     total_invocation_time_ms: int = 0  # Total time (ms) spent waiting for the database to respond
     query_stats: dict[str, QueryStatistic] = field(default_factory=lambda: {})  # The statistics for each query

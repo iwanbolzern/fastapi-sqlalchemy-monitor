@@ -25,6 +25,7 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
         actions: List of monitoring actions to execute
         allow_no_request_context: Whether to allow DB operations outside request context
     """
+
     request_context = ContextVar[AlchemyStatistics]("request_context", default=None)
 
     def __init__(

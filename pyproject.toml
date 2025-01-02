@@ -24,9 +24,8 @@ dev = [
 
 [tool.uv]
 package = true
-publish-url = "https://code.roche.com/api/v4/projects/70075/packages/pypi"
 python-downloads = "manual"
-default-groups = ["dev", "doc", "notebook"]
+default-groups = ["dev"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]

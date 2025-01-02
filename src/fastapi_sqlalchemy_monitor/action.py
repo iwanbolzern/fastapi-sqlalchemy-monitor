@@ -1,7 +1,7 @@
 """Actions module for FastAPI SQLAlchemy Monitor.
 
-This module provides action handlers and actions that can be triggered based on 
-SQLAlchemy query statistics. Actions can log, print, or raise exceptions when 
+This module provides action handlers and actions that can be triggered based on
+SQLAlchemy query statistics. Actions can log, print, or raise exceptions when
 certain conditions are met.
 """
 
@@ -14,14 +14,15 @@ from fastapi_sqlalchemy_monitor.statistics import AlchemyStatistics
 
 class ActionHandler(ABC):
     """Abstract base class for handling actions.
-    
+
     Defines the interface for different ways to handle action triggers, such as
     logging, printing, or raising exceptions.
     """
+
     @abstractmethod
     def handle(self, msg: str, context: dict):
         """Handle the action with a message and context.
-        
+
         Args:
             msg: The message to handle
             context: Dictionary containing contextual information
@@ -31,10 +32,11 @@ class ActionHandler(ABC):
 
 class LoggingActionHandler(ActionHandler):
     """Action handler that logs messages using Python's logging module.
-    
+
     Args:
         log_level: The logging level to use (e.g., logging.INFO)
     """
+
     def __init__(self, log_level: int):
         self.log_level = log_level
 
@@ -61,18 +63,19 @@ class RaiseActionHandler(ActionHandler):
 
 class Action(ABC):
     """Abstract base class for monitoring actions.
-    
+
     Defines the interface for actions that can be evaluated against statistics.
-    
+
     Args:
         handler: The ActionHandler to use when the action is triggered
     """
+
     def __init__(self, handler: ActionHandler):
         self.handler = handler
 
     def evaluate(self, statistics: AlchemyStatistics):
         """Evaluate statistics and trigger handler if conditions are met.
-        
+
         Args:
             statistics: The AlchemyStatistics to evaluate
         """
@@ -83,10 +86,10 @@ class Action(ABC):
     @abstractmethod
     def _evaluate(self, statistics: AlchemyStatistics) -> tuple[bool, str, dict]:
         """Evaluate statistics and return violation status, message and context.
-        
+
         Args:
             statistics: The AlchemyStatistics to evaluate
-            
+
         Returns:
             Tuple of (violation occurred, message, context dictionary)
         """
@@ -95,11 +98,12 @@ class Action(ABC):
 
 class MaxTotalInvocationAction(Action):
     """Action that triggers when total query invocations exceed a threshold.
-    
+
     Args:
         max_invocations: Maximum number of query invocations allowed
         handler: The ActionHandler to use when threshold is exceeded
     """
+
     def __init__(self, max_invocations: int, handler: ActionHandler):
         super().__init__(handler)
         self.max_invocations = max_invocations
@@ -117,40 +121,44 @@ class MaxTotalInvocationAction(Action):
 
 class WarnMaxTotalInvocation(MaxTotalInvocationAction):
     """Logs a warning when query invocations exceed threshold.
-    
+
     Args:
         max_invocations: Maximum number of query invocations allowed
     """
+
     def __init__(self, max_invocations: int):
         super().__init__(max_invocations, LoggingActionHandler(logging.WARNING))
 
 
 class ErrorMaxTotalInvocation(MaxTotalInvocationAction):
     """Logs an error when query invocations exceed threshold.
-    
+
     Args:
         max_invocations: Maximum number of query invocations allowed
     """
+
     def __init__(self, max_invocations: int):
         super().__init__(max_invocations, LoggingActionHandler(logging.ERROR))
 
 
 class RaiseMaxTotalInvocation(MaxTotalInvocationAction):
     """Raises an exception when query invocations exceed threshold.
-    
+
     Args:
         max_invocations: Maximum number of query invocations allowed
     """
+
     def __init__(self, max_invocations: int):
         super().__init__(max_invocations, RaiseActionHandler())
 
 
 class LogStatistics(Action):
     """Action that logs current statistics.
-    
+
     Args:
         log_level: The logging level to use (default: logging.INFO)
     """
+
     def __init__(self, log_level=logging.INFO):
         super().__init__(LoggingActionHandler(log_level=log_level))
 
