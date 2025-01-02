@@ -1,5 +1,10 @@
 # FastAPI SQLAlchemy Monitor
 
+[![PyPI version](https://badge.fury.io/py/fastapi-sqlalchemy-monitor.svg)](https://badge.fury.io/py/fastapi-sqlalchemy-monitor)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Test](https://github.com/iwanbolzern/fastapi-sqlalchemy-monitor/actions/workflows/test.yml/badge.svg)](https://github.com/iwanbolzern/fastapi-sqlalchemy-monitor/actions/workflows/test.yml)
+[![Python Versions](https://img.shields.io/pypi/pyversions/fastapi-sqlalchemy-monitor.svg)](https://pypi.org/project/fastapi-sqlalchemy-monitor/)
+
 A middleware for FastAPI that monitors SQLAlchemy database queries, providing insights into database usage patterns and helping catch potential performance issues.
 
 ## Features

@@ -1,16 +1,29 @@
 [project]
 name = "fastapi-sqlalchemy-monitor"
 dynamic = ["version"]
-description = "Add your description here"
+description = "Seamlessly track SQLAlchemy performance in FastAPI with plug-and-play monitoring middleware 🔍"
 authors = [
     { name = "Iwan Bolzern" },
 ]
 readme = "README.md"
-urls = { Documentation = "https://github.com/Roche-REMCS/remcs-ai" }
+urls = { Documentation = "https://github.com/iwanbolzern/fastapi-sqlalchemy-monitor" }
 requires-python = ">=3.10"
 dependencies = [
     "fastapi[all]>=0.115.6",
     "sqlalchemy[asyncio]>=2.0.36",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [dependency-groups]
