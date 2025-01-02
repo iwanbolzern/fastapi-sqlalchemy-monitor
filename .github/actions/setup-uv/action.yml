@@ -4,12 +4,6 @@ inputs:
   python-version:
     description: 'Python version to use'
     required: true
-  registry-username:
-    description: 'PyPI registry username'
-    required: true
-  registry-password:
-    description: 'PyPI registry password'
-    required: true
 runs:
   using: "composite"
   steps:
@@ -25,6 +19,3 @@ runs:
         echo "UV_PROJECT_ENVIRONMENT is set to $UV_PROJECT_ENVIRONMENT"
         uv sync --frozen
       shell: bash
-      env:
-        UV_INDEX_ROCHE_USERNAME: ${{ inputs.registry-username }}
-        UV_INDEX_ROCHE_PASSWORD: ${{ inputs.registry-password }}
