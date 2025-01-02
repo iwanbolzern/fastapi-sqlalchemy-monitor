@@ -17,6 +17,7 @@ runs:
         python_path=${{ steps.setup-python.outputs.python-path }}
         python_root_dir=$(dirname $(dirname $python_path))
         export UV_PROJECT_ENVIRONMENT=$python_root_dir
+        export UV_PYTHON=${{ steps.setup-python.outputs.python-path }}
         echo "UV_PROJECT_ENVIRONMENT is set to $UV_PROJECT_ENVIRONMENT"
         uv sync --frozen
       shell: bash
