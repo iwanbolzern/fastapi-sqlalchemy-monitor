@@ -41,6 +41,25 @@ def test_middleware(capsys, app: FastAPI, session_maker: tuple[sessionmaker[Sess
     assert test_action.statistics.total_invocations == 2
 
 
+def test_middleware_with_engine_factory(capsys, app: FastAPI, session_maker: tuple[sessionmaker[Session], Engine]):
+    @app.get("/")
+    def test_method():
+        session = session_maker[0]()
+        session.execute(text("SELECT 1"))
+        session.execute(text("SELECT 1"))
+
+    test_action = TestAction()
+    app.add_middleware(SQLAlchemyMonitor, engine_factory=lambda: session_maker[1], actions=[test_action])
+
+    test_client = TestClient(app)
+
+    res = test_client.get("/")
+    assert res.status_code == 200
+
+    # assert stdout is Total invocations: 2
+    assert test_action.statistics.total_invocations == 2
+
+
 def test_middleware_orm(app: FastAPI, session_maker: tuple[sessionmaker[Session], Engine]):
     # create an ORM class
     class Base(DeclarativeBase):

@@ -39,3 +39,24 @@ def test_middleware(app: FastAPI, session_maker: tuple[async_sessionmaker[AsyncS
 
     # assert stdout is Total invocations: 2
     assert test_action.statistics.total_invocations == 2
+
+
+def test_middleware_with_engine_factory(
+    app: FastAPI, session_maker: tuple[async_sessionmaker[AsyncSession], AsyncEngine]
+):
+    @app.get("/")
+    async def test_method():
+        session = session_maker[0]()
+        await session.execute(text("SELECT 1"))
+        await session.execute(text("SELECT 1"))
+
+    test_action = TestAction()
+    app.add_middleware(SQLAlchemyMonitor, engine_factory=lambda: session_maker[1], actions=[test_action])
+
+    test_client = TestClient(app)
+
+    res = test_client.get("/")
+    assert res.status_code == 200
+
+    # assert stdout is Total invocations: 2
+    assert test_action.statistics.total_invocations == 2
