@@ -22,6 +22,8 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
     Args:
         app: The ASGI application
         engine: SQLAlchemy engine instance (sync or async)
+        engine_factory: Factory function to get SQLAlchemy engine instance (sync or async). Use this if SQLAlchemy
+        engine is not available at the time of middleware initialization
         actions: List of monitoring actions to execute
         allow_no_request_context: Whether to allow DB operations outside request context
     """
@@ -29,16 +31,28 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
     request_context = ContextVar[AlchemyStatistics]("request_context", default=None)
 
     def __init__(
-        self, app: ASGIApp, engine: Engine | AsyncEngine, actions: list[Action] = None, allow_no_request_context=False
+        self,
+        app: ASGIApp,
+        engine: Engine | AsyncEngine = None,
+        engine_factory: Callable[[], Engine | AsyncEngine] = None,
+        actions: list[Action] = None,
+        allow_no_request_context=False,
     ):
         super().__init__(app)
 
-        self._engine = engine if isinstance(engine, Engine) else engine.sync_engine
+        if engine is None and engine_factory is None:
+            raise ValueError("SQLAlchemyMonitor middleware requires either engine or engine_factory")
+
+        if engine and engine_factory:
+            raise ValueError("SQLAlchemyMonitor middleware requires either engine or engine_factory, not both")
+
         self._actions = actions or []
         self._allow_no_request_context = allow_no_request_context
+        self._engine = None
+        self._engine_factory = engine_factory
 
-        event.listen(self._engine, "before_cursor_execute", self.before_cursor_execute)
-        event.listen(self._engine, "after_cursor_execute", self.after_cursor_execute)
+        if engine:
+            self._engine = self._register_listener(engine)
 
     def init_statistics(self):
         self.request_context.set(AlchemyStatistics())
@@ -79,6 +93,19 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
         print(orm_execute_state)
 
     async def dispatch(self, request: Request, call_next: Callable):
+        if self._engine_factory is None:
+            return await self._dispatch(request, call_next)
+
+        engine = self._register_listener(self._engine_factory())
+
+        res = await self._dispatch(request, call_next)
+
+        event.remove(engine, "before_cursor_execute", self.before_cursor_execute)
+        event.remove(engine, "after_cursor_execute", self.after_cursor_execute)
+
+        return res
+
+    async def _dispatch(self, request: Request, call_next: Callable):
         self.init_statistics()
         res = await call_next(request)
 
@@ -86,3 +113,12 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
             action.handle(self.statistics)
 
         return res
+
+    def _register_listener(self, engine: Engine | AsyncEngine) -> Engine:
+        if isinstance(engine, AsyncEngine):
+            engine = engine.sync_engine
+
+        event.listen(engine, "before_cursor_execute", self.before_cursor_execute)
+        event.listen(engine, "after_cursor_execute", self.after_cursor_execute)
+
+        return engine
