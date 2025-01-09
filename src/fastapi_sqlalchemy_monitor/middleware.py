@@ -22,6 +22,8 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
     Args:
         app: The ASGI application
         engine: SQLAlchemy engine instance (sync or async)
+        engine_factory: Factory function to get SQLAlchemy engine instance (sync or async). Use this if SQLAlchemy
+        engine is not available at the time of middleware initialization
         actions: List of monitoring actions to execute
         allow_no_request_context: Whether to allow DB operations outside request context
     """
