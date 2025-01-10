@@ -65,8 +65,12 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
         conn.info["query_start_time"] = time.time()
 
     def after_cursor_execute(self, conn, cursor, statement, parameters, context, executemany):
-        total = time.time() - conn.info["query_start_time"]
-        del conn.info["query_start_time"]
+        query_start_time = conn.info.pop("query_start_time", None)
+        if query_start_time is None:
+            logging.warning("Received after_cursor_execute event without before_cursor_execute event")
+            return
+
+        total = time.time() - query_start_time
 
         if self.statistics is None:
             if not self._allow_no_request_context:
