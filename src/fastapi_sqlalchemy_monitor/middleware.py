@@ -62,10 +62,18 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
         return self.request_context.get()
 
     def before_cursor_execute(self, conn, cursor, statement, parameters, context, executemany):
-        conn.info["query_start_time"] = time.time()
+        if context is None:
+            logging.warning("Received before_cursor_execute event without context")
+            return
+
+        context.query_start_time = time.time()
 
     def after_cursor_execute(self, conn, cursor, statement, parameters, context, executemany):
-        query_start_time = conn.info.pop("query_start_time", None)
+        if context is None:
+            logging.warning("Received after_cursor_execute event without context")
+            return
+
+        query_start_time = getattr(context, "query_start_time", None)
         if query_start_time is None:
             logging.warning("Received after_cursor_execute event without before_cursor_execute event")
             return
@@ -97,17 +105,10 @@ class SQLAlchemyMonitor(BaseHTTPMiddleware):
         print(orm_execute_state)
 
     async def dispatch(self, request: Request, call_next: Callable):
-        if self._engine_factory is None:
-            return await self._dispatch(request, call_next)
+        if self._engine_factory and self._engine is None:
+            self._engine = self._register_listener(self._engine_factory())
 
-        engine = self._register_listener(self._engine_factory())
-
-        res = await self._dispatch(request, call_next)
-
-        event.remove(engine, "before_cursor_execute", self.before_cursor_execute)
-        event.remove(engine, "after_cursor_execute", self.after_cursor_execute)
-
-        return res
+        return await self._dispatch(request, call_next)
 
     async def _dispatch(self, request: Request, call_next: Callable):
         self.init_statistics()
